@@ -3,33 +3,28 @@ import OVMSManager from './ovmsManager';
 
 async function main(): Promise<void> {
   const ovmsManager = new OVMSManager();
-  const recorder = new HotkeyRecorder();
-
+  let recorder: HotkeyRecorder | undefined;
+  let shuttingDown = false;
+  const shutdown = async (exitCode: number) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    try { await recorder?.unregister(); }
+    catch (error) { console.error('Recorder cleanup failed:', error); exitCode = 1; }
+    finally { await ovmsManager.stop(); }
+    process.exit(exitCode);
+  };
+  process.on('SIGINT', () => { void shutdown(0); });
+  process.on('SIGTERM', () => { void shutdown(0); });
   try {
-    // Start OpenVINO server first
+    recorder = new HotkeyRecorder();
     await ovmsManager.start();
-
-    // Start the global hotkey recorder
+    if (shuttingDown) return;
     await recorder.start();
-
-    // Keep the process running
     console.log('\nPress Ctrl+C to exit...');
-
-    // Handle graceful shutdown
-    process.on('SIGINT', async () => {
-      console.log('\nShutting down...');
-      await recorder.unregister();
-
-      // Stop OVMS server
-      await ovmsManager.stop();
-
-      process.exit(0);
-    });
-
   } catch (error) {
     console.error('Fatal error:', (error as Error).message);
-    process.exit(1);
+    await shutdown(1);
   }
 }
 
-main();
+void main();

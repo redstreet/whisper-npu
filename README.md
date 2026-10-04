@@ -11,10 +11,12 @@ Brings speech-to-text to any app at cursor via global hotkey.
 3. Start the whisper-npu.exe. (this auto downloads and uses the whisper-small model for you, model can be changed later)
 
 # How to use
-1. Hitting `win + /` keys would start capturing your audio
-2. Speak something 
-3. Pressing the same keys again to stop capturing your audio
-4. The app **puts the converted/transcribed text to the current focused input.**
+1. Hold `Win + /` to start capturing audio.
+2. Speak while holding the shortcut.
+3. Release `/` or the Windows key to stop and transcribe.
+4. The app inserts the transcription into the currently focused application. Shortcuts pressed while transcription or insertion is in progress are ignored.
+
+The keyboard hook observes global key events; unlike the previous library, it does not suppress the shortcut from reaching Windows or the focused application.
 
 
 **Please check Troubleshooting section in case if you face any issue**
@@ -33,9 +35,29 @@ Edit `config.json` to configure your setup:
   "ovmsDirectoryPath": "./external/ovms",
   "soxDirectoryPath": "./external/sox/bin",
   "task": "speech2text",
-  "targetDevice": "NPU" // models supports NPU only at the moment
+  "targetDevice": "NPU", // models support NPU only at the moment
+  "pasteMethod": "auto",
+  "clipboardRestoreDelayMs": 500
 }
 ```
+### Text insertion
+
+`pasteMethod` defaults to `auto`:
+
+| Value | Behavior |
+| --- | --- |
+| `auto` | Ctrl+Shift+V in Windows Terminal (including WSL); Shift+Insert in classic console windows; Ctrl+V elsewhere. |
+| `ctrl-v` | Always send Ctrl+V. |
+| `ctrl-shift-v` | Always send Ctrl+Shift+V. |
+| `shift-insert` | Always send Shift+Insert. |
+| `direct` | Type Unicode text without accessing the clipboard. Line breaks and tabs become spaces; other control characters are omitted. |
+
+Use an explicit method for customized shortcuts or embedded terminals (such as VS Code), which cannot reliably be distinguished from their host editor by foreground process alone. Direct mode avoids keyboard-layout character mapping, but applications must support Windows Unicode input; automatic clipboard paste remains the recommended terminal default. No mode appends Enter or submits your text. Clipboard mode preserves existing line breaks, so terminal-specific multiline paste behavior still applies.
+
+Clipboard paste saves existing formats (including text, HTML/RTF, images, and file lists) in memory and restores them after `clipboardRestoreDelayMs` (default 500; range 0–30000). Increase the delay if a slow application pastes your old clipboard contents. If you copy something else meanwhile, your newer clipboard contents take precedence. Unknown formats that cannot be preserved cause insertion to abort before overwriting the clipboard; use direct mode in that case. Clipboard history is not managed, and a forced process termination can prevent restoration.
+
+Keep the target application focused during insertion. The helper waits up to five seconds for modifier keys to be released and stops if focus changes. Input failures are reported without automatically trying another method, which could duplicate partially inserted text. The transcription stays visible in the console. An elevated/admin application requires the dictation app to have matching privileges.
+
 # Supported Models for NPU:
 Following models are support to run on NPU, I will add more models soon. Change the value of `sourceModel` in config file to one of the following:
 
@@ -63,7 +85,7 @@ npm install
 ```bash
 npm run release
 ```
-This will build and generate a `./pack/whisper-npu.zip` file, extract it and run `whisper-npu.exe` to use the application.
+This generates `./pack/whisper-npu.zip` for Windows x64. Extract the entire ZIP and run `whisper-npu.exe` from that directory. Keep the included `windows/` helper directory beside the executable; it uses Windows PowerShell 5.1 and .NET Framework. The release includes the Windows native keyboard-hook binary.
 
 
 ## Development
@@ -91,3 +113,11 @@ MPL 2.0
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Validation
+
+- `npm test`: builds TypeScript and tests shortcut handling, quick releases, repeated keys, startup/shutdown failures, serialization, and configuration.
+- `npm run test:windows`: on a Windows desktop, compiles the insertion helper and tests shortcut selection and clipboard restoration, including rich text, images, file lists, and a newer clipboard copy. Temporarily exercises the clipboard and restores its original contents; do not copy other content during this test.
+- Manual Windows release check: test hold/release in both orders, quick taps, a long hold, and Ctrl+C shutdown. Dictate into Notepad and Windows Terminal running WSL/CLI tools; verify exactly one insertion and restored clipboard. Repeat with `pasteMethod: "direct"`, Unicode/emoji, and quotes. Check focus changes, modifier keys held during insertion, and custom shortcut overrides. Repeat using the extracted release ZIP, not only `npm start`.
+
+Linux builds and unit tests do not verify Windows keyboard hooks, clipboard APIs, native-module loading, or actual input delivery.

@@ -7,5 +7,7 @@
   "task": "speech2text",
   "targetDevice": "NPU",
   "temperature": "0",
-  "language": "en"
+  "language": "en",
+  "pasteMethod": "auto",
+  "clipboardRestoreDelayMs": 500
 }
