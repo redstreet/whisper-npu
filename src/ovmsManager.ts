@@ -28,7 +28,9 @@ class OVMSManager {
       '; & ' + quote(path.join(directory, 'ovms.exe')) + ' ' + args.map(quote).join(' ') + '; exit $LASTEXITCODE';
     console.log('Starting OpenVINO server...');
     this.stopping = false;
-    const child = spawn('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', command], {
+    // The bundled setup script may retain Windows' downloaded-file marker.
+    // Apply the policy only to this child process, not the user's machine.
+    const child = spawn('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', command], {
       cwd: directory, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe']
     });
     this.ovmsProcess = child;

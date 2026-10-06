@@ -44,6 +44,7 @@ test('OpenVINO launch is hidden, rejects spawn errors, and reports unexpected ex
     assert.equal(command, 'powershell.exe');
     assert.equal(options.windowsHide, true);
     assert.equal(args.includes('-NonInteractive'), true);
+    assert.deepEqual(args.slice(args.indexOf('-ExecutionPolicy'), args.indexOf('-ExecutionPolicy') + 2), ['-ExecutionPolicy', 'Bypass']);
     const child = new EventEmitter(); child.stdout = new PassThrough(); child.stderr = new PassThrough();
     child.exitCode = null; child.signalCode = null;
     children.push(child);
