@@ -9,11 +9,14 @@
     "clean": "node scripts/clean.js",
     "start": "node dist/main.js",
     "dev": "ts-node src/main.ts",
-    "exe": "pkg . --no-bytecode --public-packages \"*\" --public",
+    "exe": "npm run exe:engine && npm run build:tray",
     "pack": "node scripts/pack.js",
     "release": "npm run clean && npm run build && npm run exe && npm run pack",
     "test": "npm run build && node --test tests/*.test.cjs",
-    "test:windows": "powershell.exe -NoProfile -NonInteractive -STA -ExecutionPolicy Bypass -File tests/windows-insertion.ps1"
+    "test:windows": "powershell.exe -NoProfile -NonInteractive -STA -ExecutionPolicy Bypass -File tests/windows-insertion.ps1",
+    "exe:engine": "pkg . --output whisper-npu-engine.exe --no-bytecode --public-packages \"*\" --public",
+    "build:tray": "node scripts/build-tray.js",
+    "test:tray": "dotnet run --project tests/tray/TrayTests.csproj --configuration Release"
   },
   "keywords": [
     "whisper",

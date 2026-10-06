@@ -8,7 +8,7 @@ Brings speech-to-text to any app at cursor via global hotkey.
 # How to install
 1. Download the latest release from here: https://github.com/anubhavgupta/whisper-npu/releases/download/V1.0.1/whisper-npu.zip
 2. Extract the zip
-3. Start the whisper-npu.exe. (this auto downloads and uses the whisper-small model for you, model can be changed later)
+3. Start `whisper-npu.exe`. It runs in the Windows notification area (system tray). (this auto downloads and uses the whisper-small model for you, model can be changed later)
 
 # How to use
 1. Hold `Win + /` to start capturing audio.
@@ -20,6 +20,18 @@ The keyboard hook observes global key events; unlike the previous library, it do
 
 
 **Please check Troubleshooting section in case if you face any issue**
+
+## Tray and logs
+
+The release starts in the Windows tray with no terminal window. Click the microphone icon to show recent logs, or right-click it for **Show logs** and **Quit**. Windows may initially put the icon in the tray overflow menu.
+
+Closing or minimizing the log window hides it; dictation continues. **Quit** shuts down recording, waits for any pending clipboard restoration, and stops the OpenVINO process tree. If shutdown stalls, remaining processes are terminated after 45 seconds. Launching the app again opens the existing log window instead of starting another tray instance for the same user/session.
+
+Logs remain in memory while hidden, capped at 10,000 lines or 2 MB of text. No log or transcript file is created. Startup failures and unexpected engine exits open the log window automatically; quit and relaunch to retry. As with any forced termination, a launcher crash or shutdown timeout can interrupt clipboard restoration.
+
+Keep `whisper-npu-engine.exe`, `whisper-npu.exe.config`, `config.json`, `windows/`, and `external/` beside the launcher. The launcher always uses its own folder as the working directory. The desktop requires .NET Framework 4.8 and Windows PowerShell 5.1. Do not launch the engine separately while the tray app is running.
+
+For foreground debugging from source, `npm start` still prints to the terminal and exits with Ctrl+C.
 
 ## Configuration
 
@@ -71,6 +83,8 @@ Following models are support to run on NPU, I will add more models soon. Change 
 ## Requirements
 
 - **Node.js** (v24 or higher)
+- **.NET SDK 8 or newer** to build the tray launcher (set `DOTNET` to its executable path if it is not on PATH). `npm run test:tray` uses the .NET 8 runtime.
+- Internet access on the first build for the packaged Node runtime and .NET Framework reference assemblies.
 - **Windows** (for Windows Forms clipboard integration)
 - **Machine with Intel NPU**
 
@@ -85,7 +99,7 @@ npm install
 ```bash
 npm run release
 ```
-This generates `./pack/whisper-npu.zip` for Windows x64. Extract the entire ZIP and run `whisper-npu.exe` from that directory. Keep the included `windows/` helper directory beside the executable; it uses Windows PowerShell 5.1 and .NET Framework. The release includes the Windows native keyboard-hook binary.
+This generates `./pack/whisper-npu.zip` for Windows x64. Extract the entire ZIP and run `whisper-npu.exe` from that directory. Keep both executables, the `.exe.config` file, and the included `windows/` helper directory together; it uses Windows PowerShell 5.1 and .NET Framework. The release includes the Windows native keyboard-hook binary.
 
 
 ## Development
@@ -116,8 +130,20 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Validation
 
+- `npm run test:tray`: tests bounded log buffering with .NET 8; runs on Windows or Linux.
 - `npm test`: builds TypeScript and tests shortcut handling, quick releases, repeated keys, startup/shutdown failures, serialization, and configuration.
 - `npm run test:windows`: on a Windows desktop, compiles the insertion helper and tests shortcut selection and clipboard restoration, including rich text, images, file lists, and a newer clipboard copy. Temporarily exercises the clipboard and restores its original contents; do not copy other content during this test.
 - Manual Windows release check: test hold/release in both orders, quick taps, a long hold, and Ctrl+C shutdown. Dictate into Notepad and Windows Terminal running WSL/CLI tools; verify exactly one insertion and restored clipboard. Repeat with `pasteMethod: "direct"`, Unicode/emoji, and quotes. Check focus changes, modifier keys held during insertion, and custom shortcut overrides. Repeat using the extracted release ZIP, not only `npm start`.
 
 Linux builds and unit tests do not verify Windows keyboard hooks, clipboard APIs, native-module loading, or actual input delivery.
+
+### Tray release verification on Windows
+
+1. Extract the release into a path containing spaces and double-click `whisper-npu.exe`. Confirm a tray icon appears with no terminal, including during model startup and recording.
+2. Click the icon and verify logs are selectable and update. Close and minimize the window; dictation must continue. Reopen it and confirm earlier logs remain visible.
+3. Launch again and confirm the existing log window opens without another engine or server process.
+4. Quit while idle, recording, transcribing, and restoring the clipboard. Verify the tray icon disappears and no engine, audio recorder, or OpenVINO child remains.
+5. In a separate test copy, temporarily rename the engine executable or use an invalid OpenVINO path. Confirm errors open the log window and Quit remains available.
+6. Terminate the engine in Task Manager and confirm the tray reports the exit. Terminate the launcher and confirm its job object removes descendants (clipboard restoration cannot be guaranteed after forced termination).
+
+Building the .NET Framework launcher from Linux is supported; the build machine needs the .NET SDK, not a Windows desktop. Live tray, input, and process-job behavior still require Windows testing.

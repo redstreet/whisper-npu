@@ -71,7 +71,7 @@ class RecordAudio {
 
       // Execute using spawn
       this.recordProcess = spawn(cmd, args, {
-        stdio: ['ignore', 'pipe', 'pipe']
+        windowsHide: true, stdio: ['ignore', 'pipe', 'pipe']
       });
 
       this.isRecording = true;
@@ -130,7 +130,7 @@ class RecordAudio {
         '-e', this.encoding,
         outputFile,
         'to-transcribe.wav'
-      ], { stdio: ['ignore', 'pipe', 'pipe'] });
+      ], { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
 
       await new Promise<void>((resolveConvert, rejectConvert) => {
         const timeout = setTimeout(() => {

@@ -15,7 +15,7 @@ async function pack() {
   const exePath = path.join(__dirname, '..', 'whisper-npu.exe');
   const externalDir = path.join(__dirname, '..', 'external');
   const configPath = path.join(__dirname, '..', 'config.json');
-  for (const file of ['windows/insert-text.ps1', 'windows/TextInput.cs']) {
+  for (const file of ['windows/insert-text.ps1', 'windows/TextInput.cs', 'whisper-npu-engine.exe', 'whisper-npu.exe.config']) {
     if (!fs.existsSync(path.join(__dirname, '..', file))) {
       throw new Error(`Required Windows helper is missing: ${file}`);
     }
@@ -59,7 +59,9 @@ async function pack() {
     archive.file(exePath, { name: 'whisper-npu.exe' });
     archive.directory(externalDir, 'external');
     archive.file(configPath, { name: 'config.json' });
-    archive.directory(path.join(__dirname, '..', 'windows'), 'windows');
+    for (const file of ['windows/insert-text.ps1', 'windows/TextInput.cs', 'whisper-npu-engine.exe', 'whisper-npu.exe.config']) {
+      archive.file(path.join(__dirname, '..', file), { name: file });
+    }
     archive.file(path.join(__dirname, '..', 'README.md'), { name: 'README.md' });
     archive.file(path.join(__dirname, '..', 'LICENSE'), { name: 'LICENSE' });
 
