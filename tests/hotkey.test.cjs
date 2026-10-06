@@ -246,3 +246,34 @@ test('missing audio executable fails without leaving recording active', async t 
   assert.deepEqual(await recorder.start({}), { success: false, error: 'ENOENT' });
   assert.equal(recorder.isRecordingActive(), false);
 });
+
+for (const scenario of [
+  { name: 'config selects Ctrl+Space', config: { hotkey: ' Ctrl + Space ' }, key: 57, modifiers: { ctrlKey: true } },
+  { name: 'missing config keeps Win+/', config: {}, key: keys.Slash, modifiers: { metaKey: true } },
+  { name: 'explicit argument overrides config', config: { hotkey: 'ctrl+space' }, override: 'alt+a', key: keys.A, modifiers: { altKey: true } }
+]) {
+  test(scenario.name, async () => {
+    const hook = new EventEmitter(); hook.start = () => {}; hook.stop = () => {};
+    let recordings = 0;
+    const recorder = new HotkeyRecorder({ hook, keys: { ...keys, Space: 57 }, config: scenario.config,
+      recordAudio: { start: async () => { recordings++; return { success: true }; }, stop: async () => ({ success: true, outputFile: 'unused.wav' }) },
+      transcriber: {}, insertion: {}
+    });
+    await recorder.start(scenario.override);
+    hook.emit('keydown', event(scenario.key, scenario.modifiers));
+    await tick();
+    assert.equal(recordings, 1);
+    await recorder.unregister();
+  });
+}
+
+test('invalid configured shortcuts fail before starting the native hook', async () => {
+  for (const hotkey of ['', '  ', 42, 'ctrl+not-a-key']) {
+    const hook = new EventEmitter(); let started = false;
+    hook.start = () => { started = true; }; hook.stop = () => {};
+    const recorder = new HotkeyRecorder({ hook, keys, config: { hotkey }, recordAudio: {}, transcriber: {}, insertion: {} });
+    await assert.rejects(recorder.start(), /hotkey|shortcut/i);
+    assert.equal(started, false); assert.equal(hook.listenerCount('keydown'), 0);
+    await recorder.unregister();
+  }
+});

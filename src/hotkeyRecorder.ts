@@ -9,6 +9,7 @@ import { AppConfig } from './types';
 
 type Hook = Pick<typeof uIOhook, 'on' | 'removeListener' | 'start' | 'stop'>;
 interface Dependencies {
+  config?: Pick<AppConfig, 'hotkey'>;
   hook: Hook;
   keys: typeof UiohookKey;
   recordAudio: Pick<RecordAudio, 'start' | 'stop'>;
@@ -29,6 +30,7 @@ class HotkeyRecorder {
       const { uIOhook, UiohookKey } = require('uiohook-napi') as typeof import('uiohook-napi');
       const config: AppConfig = JSON.parse(fs.readFileSync('config.json', 'utf8'));
       this.dependencies = {
+        config,
         hook: uIOhook, keys: UiohookKey,
         recordAudio: new RecordAudio(), transcriber: new TranscribeAudio(), insertion: new TextInsertion(config)
       };
@@ -58,9 +60,13 @@ class HotkeyRecorder {
     });
   }
 
-  async start(hotkey = 'win+/'): Promise<void> {
+  async start(hotkey = this.dependencies.config?.hotkey ?? 'win+/'): Promise<void> {
     if (this.isRegistered) return;
     if (this.cycle.isClosing()) throw new Error('Recorder has been closed');
+    if (typeof hotkey !== 'string' || !hotkey.trim()) {
+      throw new Error('hotkey must be a non-empty shortcut string, such as "ctrl+space"');
+    }
+    hotkey = hotkey.split('+').map(part => part.trim()).join('+');
     const { hook, keys } = this.dependencies;
     this.binding = new HotkeyBinding(hotkey, keys, () => this.cycle.press(), () => this.cycle.releaseKey());
     hook.on('keydown', this.binding.keydown);

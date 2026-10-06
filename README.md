@@ -48,10 +48,21 @@ Edit `config.json` to configure your setup:
   "soxDirectoryPath": "./external/sox/bin",
   "task": "speech2text",
   "targetDevice": "NPU", // models support NPU only at the moment
+  "hotkey": "win+/",
   "pasteMethod": "auto",
   "clipboardRestoreDelayMs": 500
 }
 ```
+### Recording shortcut
+
+Set `hotkey` in `config.json`, then quit the app from its tray menu and reopen it. No rebuild is needed. For example:
+
+```json
+"hotkey": "ctrl+space"
+```
+
+The default is `win+/` when the setting is omitted. Supported modifiers are `win` (or `meta`), `ctrl`, `alt`, and `shift`; combine one or more with a key such as `space`, `a`, `f8`, or `/`. Examples: `ctrl+space`, `ctrl+alt+space`, and `alt+f8`. Names are case-insensitive. Hold the shortcut to record and release a required key to stop. Invalid shortcuts are reported in the log window at startup. The shortcut also reaches the focused application, so avoid combinations that conflict with it.
+
 ### Text insertion
 
 `pasteMethod` defaults to `auto`:

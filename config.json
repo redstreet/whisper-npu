@@ -8,6 +8,7 @@
   "targetDevice": "NPU",
   "temperature": "0",
   "language": "en",
+  "hotkey": "win+/",
   "pasteMethod": "auto",
   "clipboardRestoreDelayMs": 500
 }
