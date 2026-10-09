@@ -22,7 +22,7 @@ class OVMSManager {
     const quote = (value: string) => "'" + value.replace(/'/g, "''") + "'";
     const args = [
       '--source_model', config.sourceModel, '--model_repository_path', path.resolve(config.modelRepositoryPath),
-      '--rest_port', config.restPort.toString(), '--task', config.task, '--target_device', config.targetDevice
+      '--rest_port', (config.restPort ?? 19812).toString(), '--task', config.task, '--target_device', config.targetDevice
     ];
     const command = "$ErrorActionPreference = 'Stop'; . " + quote(path.join(directory, 'setupvars.ps1')) +
       '; & ' + quote(path.join(directory, 'ovms.exe')) + ' ' + args.map(quote).join(' ') + '; exit $LASTEXITCODE';

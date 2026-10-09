@@ -16,7 +16,7 @@ class TranscribeAudio {
   constructor(configPath: string = 'config.json') {
     // Load configuration from JSON file
     const configData = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    const restPort = configData.restPort || 8000;
+    const restPort = configData.restPort ?? 19812;
     this.apiUrl = `http://localhost:${restPort}/v3/audio/translations`;
     this.config = configData;
   }

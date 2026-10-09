@@ -41,7 +41,7 @@ Edit `config.json` to configure your setup:
 {
   "sourceModel": "anubhav200/openai-whisper-tiny-openvino-int4", // check list of supported models below
   "modelRepositoryPath": "./downloaded-whisper-npu-models", // directory where models would be downloaded and stored
-  "restPort": 8000, // port on which transciption server would run.
+  "restPort": 19812, // port on which transciption server would run.
   "temperature": "0", // 0 to 1, can be adjusted to improve accuracy
   "language": "en", // set this to your speaking lang, this again will help improve accuracy
   "ovmsDirectoryPath": "./external/ovms",
